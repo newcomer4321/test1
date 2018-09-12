@@ -2,7 +2,7 @@
 
 //addReplyErrorFormat
 
-int channelIsOpen(char *channelName)
+int channelIsCreate(char *channelName)
 {
     int res = 1;
     if(access(channelName, F_OK) == -1) {
@@ -59,58 +59,44 @@ listNode *listPop(list *l)
 }
 
 
-list *readChannel(char *channelName, list *l)
+list *readChannel(int pipefd, list *l)
 {
     
-    int pipefd;
     int res;
     int readlen;
-    int openMode = O_RDONLY | O_NONBLOCK;
     void *buf = zmalloc(CLIENT_POINT_SIZE);
 
     if(l == NULL) {
         l = listCreate();
     }
 
-    pipefd = open(channelName, openMode);
 
-    if(pipefd != -1) {
-        do{
-            readlen = read(pipefd, buf, CLIENT_POINT_SIZE);
-            if(readlen > 0) {
-                printf("%s\n",(char *)buf);
-                l = listPush(l,buf);
-                buf = NULL;
-                buf = zmalloc(CLIENT_POINT_SIZE);
-            }
-        }while(readlen > 0);
-
-        close(pipefd);
-    } else {
-        addReplyErrorFormat(c, "can't open pipe %s\n",channelName);
-    }
+    do{
+        readlen = read(pipefd, buf, CLIENT_POINT_SIZE);
+        if(readlen > 0) {
+//            l = listPush(l,(void*)(*((int*)buf)));
+            l = listPush(l,buf);
+            buf = NULL;
+            buf = zmalloc(CLIENT_POINT_SIZE * 10);
+        }
+    }while(readlen > 0);
+    
+    free(buf);
     
     return l;
 
 }
 
-int writeChannel(char* channelName, void* value)
+int writeChannel(int pipefd, void* value)
 {
     int res;
     int writelen;
-    int openMode = O_WRONLY;
-    int pipefd;
-
+   // int32_t addr = value;
     
-    pipefd = open(channelName, openMode);
-    if(pipefd != -1) {
-        writelen = write(pipefd, (void *)&value, CLIENT_POINT_SIZE);
+    writelen = write(pipefd, value, CLIENT_POINT_SIZE);
 
-        if(writelen != CLIENT_POINT_SIZE){
-            addReplyErrorFormat(c, "can't write pipe %s sizeof %d\n",channelName, CLIENT_POINT_SIZE);
-        }
-    } else {
-        addReplyErrorFormat(c, "can't open pipe %s\n",channelName);
+    if(writelen != CLIENT_POINT_SIZE){
+        addReplyErrorFormat(c, "can't write pipe %s sizeof %d\n",pipefd, CLIENT_POINT_SIZE);
     }
     
     return writelen;

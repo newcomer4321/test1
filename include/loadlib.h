@@ -36,12 +36,22 @@ typedef struct channelData {
 
 #endif
 
+#define RD_NOBLOCK  O_RDONLY | O_NONBLOCK
+#define RD_BLOCK    O_RDONLY
+#define WR_NOBLOCK  O_WRONLY | O_NONBLOCK
+#define WR_BLOCK    O_WRONLY 
+
+
+
+
+
 int createChannel(char *channelName);
-extern list *readChannel(char *channelName, list *l);
-int writeChannel(char* channelName, void* value);
+list *readChannel(int pipefd, list *l);
+int writeChannel(int pipefd, void* value);
 listNode *listPop(list *l);
 list *listPush(list *l, void *value);
-
+int channelIsCreate(char *channelName);
+int openChannel(char *channelName, int mode);
 
 
 
