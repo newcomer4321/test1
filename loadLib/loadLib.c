@@ -4,10 +4,10 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <string.h>
-
-#define addReplyErrorFormat(c,tmp,args...) fprintf(stdout,tmp,##args)
+#include "../include/loadlib.h"
 
 typedef int (*loadLibFunc)();
+
 
 int fileExists(char *name)
 {
@@ -62,6 +62,7 @@ int loadLibCommand(char *path, char *name)
     return res;
 }
 
+#ifdef loadDebug
 int main(int argc, char **argv)
 {
     if(argc != 3) {
@@ -71,3 +72,4 @@ int main(int argc, char **argv)
     int res = loadLibCommand(argv[1], argv[2]);
     return res;
 }
+#endif
