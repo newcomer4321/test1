@@ -11,12 +11,12 @@ int main()
     sprintf(value3,"value3!!");
 
     int fd;
-    if(!channelIsCreate(FIFO_NAME)){
-        fd = createChannel(FIFO_NAME);
+    if(!channelIsCreate(PRIMARY_TO_WORKER)){
+        fd = createChannel(PRIMARY_TO_WORKER);
     }
 
     int writeMode = WR_BLOCK;
-    int pipefd = openChannel(FIFO_NAME, writeMode);
+    int pipefd = openChannel(PRIMARY_TO_WORKER, writeMode);
 
 
 

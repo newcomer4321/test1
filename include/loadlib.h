@@ -9,6 +9,10 @@
 #include "../../zmalloc.h"
 
 #define FIFO_NAME "/tmp/loadlib_fifo"
+#define PRIMARY_TO_WORKER "/tmp/worker_pipo"
+#define WORKER_TO_COMINBER  "/tmp/cominber_pipo"
+
+
 
 #define BUFFER_SIZE PIPE_BUF
 
@@ -46,7 +50,7 @@ typedef struct channelData {
 
 
 int createChannel(char *channelName);
-list *readChannel(int pipefd, list *l);
+int readChannel(int pipefd, list *l);
 int writeChannel(int pipefd, void* value);
 listNode *listPop(list *l);
 list *listPush(list *l, void *value);

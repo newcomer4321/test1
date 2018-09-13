@@ -59,7 +59,7 @@ listNode *listPop(list *l)
 }
 
 
-list *readChannel(int pipefd, list *l)
+int readChannel(int pipefd, list *l)
 {
     
     int res;
@@ -83,7 +83,7 @@ list *readChannel(int pipefd, list *l)
     
     free(buf);
     
-    return l;
+    return readlen;
 
 }
 
@@ -93,7 +93,7 @@ int writeChannel(int pipefd, void* value)
     int writelen;
    // int32_t addr = value;
     
-    writelen = write(pipefd, value, CLIENT_POINT_SIZE);
+    writelen = write(pipefd, &value, CLIENT_POINT_SIZE);
 
     if(writelen != CLIENT_POINT_SIZE){
         addReplyErrorFormat(c, "can't write pipe %s sizeof %d\n",pipefd, CLIENT_POINT_SIZE);

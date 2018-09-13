@@ -1,14 +1,18 @@
 
-server = server
-client = client
+combiner = combiner
+primary = primary
+worker = worker
 
-all:$(server) $(client)
+all:$(combiner) $(primary) $(worker)
 
-$(server):
-	gcc -g  -o server  ../../../zmalloc.c ../../../adlist.c  ../mp_channel.c mp_channel_server.c
-$(client):
-	gcc -g  -o client  ../../../zmalloc.c ../../../adlist.c  ../mp_channel.c mp_channel_client.c
+$(combiner):
+	gcc -g  -o combiner  ../../../zmalloc.c ../../../adlist.c  ../mp_channel.c combiner.c
+$(primary):
+	gcc -g  -o primary  ../../../zmalloc.c ../../../adlist.c  ../mp_channel.c primary.c
+$(worker):
+	gcc -g  -o worker  ../../../zmalloc.c ../../../adlist.c  ../mp_channel.c worker.c
+
 
 
 clean:
-	rm -rf $(server) $(client)
+	rm -rf $(combiner) $(primary) $(worker)
