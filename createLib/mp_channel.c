@@ -77,7 +77,7 @@ int readChannel(int pipefd, list *l)
 //            l = listPush(l,(void*)(*((int*)buf)));
             l = listPush(l,buf);
             buf = NULL;
-            buf = zmalloc(CLIENT_POINT_SIZE * 10);
+            buf = zmalloc(CLIENT_POINT_SIZE);
         }
     }while(readlen > 0);
     

@@ -7,11 +7,12 @@
 #include <sys/stat.h> 
 #include "../../adlist.h"
 #include "../../zmalloc.h"
+#include <pthread.h>
 
 #define FIFO_NAME "/tmp/loadlib_fifo"
 #define PRIMARY_TO_WORKER "/tmp/worker_pipo"
 #define WORKER_TO_COMINBER  "/tmp/cominber_pipo"
-
+#define turnToAddr(addr)  (*((ssize_t*)addr))
 
 
 #define BUFFER_SIZE PIPE_BUF
