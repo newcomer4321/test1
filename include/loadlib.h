@@ -32,9 +32,6 @@
 #define addReplyErrorFormat(c,tmp,args...) fprintf(stdout,tmp,##args)
 #define serverLog(level, fmt, args...) printf(fmt, ##args)
 
-typedef struct channelData {
-    void *client;
-}channelData;
 
 #define CLIENT_POINT_SIZE   (sizeof(void*))
 
@@ -46,9 +43,33 @@ typedef struct channelData {
 #define WR_NOBLOCK  O_WRONLY | O_NONBLOCK
 #define WR_BLOCK    O_WRONLY 
 
+#define WORKER	"worker"
+#define	COMINBER	"combiner"
+#define CHANNEL_LEN	20
+/*
+ * re means redis extern,channel name will be worker+pthreadId.
+ */
+typedef struct reWorkerTable {
+	int currWorkers;
+	struct workerInfo workers[];
+}reWorkerTable;
 
-
-
+typedef struct reWorkerInfo {
+	pthread_t threadId;
+	list * workerList;
+	int threadRun;
+}reWorkerInfo;
+/*
+typedef struct channelData {
+	struct aeEventLoop *eventLoop;
+	int fd;
+	int flag;
+	int mask;
+	void *clientData;
+}channelData;
+*/
+pthread_t combinerId;
+struct reWorkerTable *workerTable;
 
 int createChannel(char *channelName);
 int readChannel(int pipefd, list *l);
