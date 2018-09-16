@@ -55,10 +55,18 @@ typedef struct reWorkerTable {
 }reWorkerTable;
 
 typedef struct reWorkerInfo {
-	pthread_t threadId;
+	pthread_t workerId;
 	list * workerList;
-	int threadRun;
+	int workerRun;
+	char *channel;
 }reWorkerInfo;
+
+typedef struct reCombinerInfo {
+	pthread_t combinerId;
+	int combinerRun;
+	char *channel;
+	list *combinerList;
+}reCombinerInfo;
 /*
 typedef struct channelData {
 	struct aeEventLoop *eventLoop;
@@ -68,7 +76,7 @@ typedef struct channelData {
 	void *clientData;
 }channelData;
 */
-pthread_t combinerId;
+struct reCombinerInfo *combiner;
 struct reWorkerTable *workerTable;
 
 int createChannel(char *channelName);

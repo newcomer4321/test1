@@ -21,18 +21,32 @@ workerInfo * findBestThread(struct reWorkerTable *workerTable)
 	} 
 }
 
+struct reCombinerInfo * combinerInit()
+{
+	struct reCombinerInfo *combiner;
+	combiner = (reCombinerInfo *)malloc(sizeof(reCombinerInfo));
+	combiner->combinerRun = 1;
+	comibner->channel = NULL;
+	combiner->combinerList = listCreate();
+    if(pthread_create(&(combiner->combinerId),NULL,combiner,combiner)! = 0) {
+    addReplyErrorFormat(c,"can't create pthread\n");
+    }
+
+}
 
 struct reWorkerTable * workerInit(int workerSize)
 {
 	reWorkerTable *workerTable;
 	int i;
+	workerTable = (reWorkerTable*)malloc(sizeof(reWorkerTable));
 	workerTable->currWorkers = workerSize;
 	workerTable->workers = (struct reWorkerInfo *) malloc(sizeof(reWorkerInfo)*workerSize);
 	workerInfo * workerinfo = workerTable->workers;
 	for(i = 0; i < workerSize; i++) {
 		workerinfo[i]->workerList = listCreate();
-		workerinfo[i]->threadRun = 1;
-		if(pthread_create(&(workerinfo[i]->threadId),NULL,worker,&(workerinfo[i]))! = 0) {
+		workerinfo[i]->workerRun = 1;
+		 workerinfo[i]->channel = NULL;
+		if(pthread_create(&(workerinfo[i]->workerId),NULL,worker,&(workerinfo[i]))! = 0) {
 			addReplyErrorFormat(c,"can't create pthread\n");
 		}
 	}
@@ -40,15 +54,18 @@ struct reWorkerTable * workerInit(int workerSize)
 
 int sendToWork(workerInfo *worker, client *clientData)
 {
-	char *workerChannel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
-	sprintf(workerChannel, "%s_%d", WORKER, worker->threadId);
+	if(worker->channel == NULL) {
+		worker->channel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
+		sprintf(workerChannel, "%s_%ld", WORKER, worker->threadId);
+	}
+	char *workerChannel = worker->channel;
 	int res;
 	if(!channelIsCreate(workerChannel)) {
 		res = createChannel(workerChannel);	
 	}
 
 	int writeMode = WR_BLOCK;
-	int pipefd = openChannel(PRIMARY_TO_WORKER, writeMode);
+	int pipefd = openChannel(workerChannel, writeMode);
 	return writeChannel(pipefd, clientData);
 }
 
@@ -70,7 +87,9 @@ void  parseQuery(client * clientData)
 
 }
 
-
+int sendToCombiner(reCombinerInfo *combiner)
+{
+}
 void *worker(void *value)
 {
 
@@ -87,11 +106,14 @@ void *worker(void *value)
  */
 	workerInfo *worker = (workerInfo *)value;
     list *l = worker->workerList;
-	char *workerChannel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
+	if(worker->channel == NULL) {
+		worker->channel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
+		sprintf(workerChannel,"%s_%ld", WORKER, worker->workerId);
+	}
+	char *workerChannel = worker->channel;
 	char *combinerChannel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
-	sprintf(workerChannel,"%s_%d", WORKER, worker->threadId);
-	sprintf(combinerChannel,"%s_%d", COMINBER, combinerId);
-	int run = worker->threadRun;
+	sprintf(combinerChannel,"%s_%ld", COMINBER, combinerId);
+	int run = worker->workerRun;
     int res = 0;
     if(!channelIsCreate(workerChannel)){
         res = createChannel(workerChannel);
@@ -138,28 +160,34 @@ void beforeSleepRE(struct aeEventLoop *eventLoop)
 
 void *combiner(void *value)
 {
-    list *l = listCreate();
-    int i = 10;
-    int fd;
-    if(!channelIsCreate(WORKER_TO_COMINBER)){
-        fd = createChannel(WORKER_TO_COMINBER);
-    }
+	struct reCombinerInfo *combiner = (reCombinerInfo *)value;
+    list *l = combiner->combinerList;
 
+	if(combiner->channel == NULL) {
+		combiner->channel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
+		sprintf(combiner->channel,"%s_%ld", COMINBER, combiner->combinerId);
+	}
+	char *channel = combiner->channel;
+    int fd;
+    if(!channelIsCreate(channel)){
+        fd = createChannel(channel);
+    }
+	int run = combiner->combinerRun;
     int readMode = RD_NOBLOCK;
-    int pipefd = openChannel(WORKER_TO_COMINBER, readMode);
+    int pipefd = openChannel(channel, readMode);
     int readlen = 0;
-    while(1) {
+    while(run) {
         while(l->len == 0 || readlen > 0) {
             readlen = readChannel(pipefd, l);
-            i--;
             sleep(1);
         }
         while(l->len > 0) {
             listNode *node = listPop(l);
+			execCommandRE();
             printf("in comber:%s\n",(char *)turnToAddr(node->value));
             zfree(node);
         }
-        i = 10;
+		standBeforeSleep();
     }
     return NULL;
 }
