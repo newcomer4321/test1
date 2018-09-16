@@ -1,17 +1,17 @@
-#include "../../include/loadlib.h"
+#include "../include/loadlib.h"
 
 
-workerInfo * findBestThread(struct reWorkerTable *workerTable)
+reWorkerInfo * findBestThread(struct reWorkerTable *workerTable)
 {
 	int size = workerTable->currWorkers;
 	int worker;
-	workerInfo *bestWorker, *worker;
+	reWorkerInfo *bestWorker, *tmpWorker;
 	if(size > 0) {
-		bestWorker = workerTable->workers[0];
+		bestWorker = &workerTable->workers[0];
 		for(worker = 1; worker < size; worker++) {
-			worker = workerTable->workers[i];
-			if(worker->workerList->len < bestWorker->workerList->len) {
-				bestWorker = worker;
+			tmpWorker = &workerTable->workers[worker];
+			if(tmpWorker->workerList->len < bestWorker->workerList->len) {
+				bestWorker = tmpWorker;
 			}
 		}
 
@@ -26,10 +26,10 @@ struct reCombinerInfo * combinerInit()
 	struct reCombinerInfo *combiner;
 	combiner = (reCombinerInfo *)malloc(sizeof(reCombinerInfo));
 	combiner->combinerRun = 1;
-	comibner->channel = NULL;
+	combiner->channel = NULL;
 	combiner->combinerList = listCreate();
-    if(pthread_create(&(combiner->combinerId),NULL,combiner,combiner)! = 0) {
-    addReplyErrorFormat(c,"can't create pthread\n");
+    if(pthread_create(&(combiner->combinerId),NULL,combinerThread,(void *)combiner) != 0) {
+		addReplyErrorFormat(c,"can't create pthread\n");
     }
 
 }
@@ -41,22 +41,22 @@ struct reWorkerTable * workerInit(int workerSize)
 	workerTable = (reWorkerTable*)malloc(sizeof(reWorkerTable));
 	workerTable->currWorkers = workerSize;
 	workerTable->workers = (struct reWorkerInfo *) malloc(sizeof(reWorkerInfo)*workerSize);
-	workerInfo * workerinfo = workerTable->workers;
+	reWorkerInfo * workerinfo = workerTable->workers;
 	for(i = 0; i < workerSize; i++) {
-		workerinfo[i]->workerList = listCreate();
-		workerinfo[i]->workerRun = 1;
-		 workerinfo[i]->channel = NULL;
-		if(pthread_create(&(workerinfo[i]->workerId),NULL,worker,&(workerinfo[i]))! = 0) {
+		workerinfo[i].workerList = listCreate();
+		workerinfo[i].workerRun = 1;
+		 workerinfo[i].channel = NULL;
+		if(pthread_create(&(workerinfo[i].workerId),NULL,workerThread,&(workerinfo[i])) != 0) {
 			addReplyErrorFormat(c,"can't create pthread\n");
 		}
 	}
 }
 
-int sendToWork(workerInfo *worker, client *clientData)
+int sendToWork(reWorkerInfo *worker, client *clientData)
 {
 	if(worker->channel == NULL) {
 		worker->channel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
-		sprintf(workerChannel, "%s_%ld", WORKER, worker->threadId);
+		sprintf(worker->channel, "%s_%ld", WORKER, worker->workerId);
 	}
 	char *workerChannel = worker->channel;
 	int res;
@@ -69,10 +69,10 @@ int sendToWork(workerInfo *worker, client *clientData)
 	return writeChannel(pipefd, clientData);
 }
 
-int processCommandRE(client *cilientData)
+int processCommandRE(client *clientData)
 {
-	workerInfo * worker = findBestThread(workerTable);
-	sendToWork(worker, c);
+	reWorkerInfo * worker = findBestThread(workerTable);
+	sendToWork(worker, clientData);
 }
 
 void  parseQuery(client * clientData)
@@ -83,14 +83,14 @@ void  parseQuery(client * clientData)
  *
  */	
 
-	sendToCombiner();
+//	sendToCombiner();
 
 }
 
 int sendToCombiner(reCombinerInfo *combiner)
 {
 }
-void *worker(void *value)
+void *workerThread(void *value)
 {
 
 
@@ -104,29 +104,30 @@ void *worker(void *value)
  *
  *
  */
-	workerInfo *worker = (workerInfo *)value;
+	reWorkerInfo *worker = (reWorkerInfo *)value;
     list *l = worker->workerList;
 	if(worker->channel == NULL) {
 		worker->channel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
-		sprintf(workerChannel,"%s_%ld", WORKER, worker->workerId);
+		sprintf(worker->channel,"%s_%ld", WORKER, worker->workerId);
 	}
 	char *workerChannel = worker->channel;
-	char *combinerChannel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
-	sprintf(combinerChannel,"%s_%ld", COMINBER, combinerId);
+	//char *combinerChannel = (char *)malloc(sizeof(char)*CHANNEL_LEN);
+	//sprintf(combinerChannel,"%s_%ld", COMINBER, combinerId);
 	int run = worker->workerRun;
     int res = 0;
     if(!channelIsCreate(workerChannel)){
         res = createChannel(workerChannel);
     }
+/*
     if(!channelIsCreate(combinerChannel)){
         res = createChannel(combinerChannel);
     }
     
-    
+*/    
     int readMode = RD_NOBLOCK;
-    int writeMode = WR_BLOCK;
+//    int writeMode = WR_BLOCK;
     int fdPrimaryToWorker = openChannel(workerChannel, readMode);
-    int fdWorkerToCombiner = openChannel(combinerChannel, writeMode);
+//    int fdWorkerToCombiner = openChannel(combinerChannel, writeMode);
     int readlen = 0;
     while(run) {
         while(l->len == 0 || readlen > 0) {
@@ -145,7 +146,7 @@ void *worker(void *value)
         }
     }
     
-    close(fdWorkerToCombiner);
+//    close(fdWorkerToCombiner);
     close(fdPrimaryToWorker);
     
 }
@@ -158,7 +159,7 @@ void beforeSleepRE(struct aeEventLoop *eventLoop)
 }
 
 
-void *combiner(void *value)
+void *combinerThread(void *value)
 {
 	struct reCombinerInfo *combiner = (reCombinerInfo *)value;
     list *l = combiner->combinerList;
@@ -195,7 +196,7 @@ void *combiner(void *value)
 
 int main()
 {
-
+/*
     pthread_t pCombiner, pWorker, pPrimary;
 
     int primaryId = pthread_create(&pPrimary, NULL, primary, NULL);
@@ -205,5 +206,6 @@ int main()
     pthread_join(pPrimary, NULL);
     pthread_join(pWorker, NULL);
     pthread_join(pCombiner, NULL);
+*/
     return 0;
 }

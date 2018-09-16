@@ -1,5 +1,5 @@
-#include <stdio.h>  
-#include <stdlib.h>  
+//#include <stdio.h>  
+//#include <stdlib.h>  
 #include <string.h>  
 #include <fcntl.h>  
 #include <limits.h>  
@@ -8,6 +8,8 @@
 #include "../../adlist.h"
 #include "../../zmalloc.h"
 #include <pthread.h>
+#include "../../server.h"
+#include <unistd.h>
 
 #define FIFO_NAME "/tmp/loadlib_fifo"
 #define PRIMARY_TO_WORKER "/tmp/worker_pipo"
@@ -51,7 +53,7 @@
  */
 typedef struct reWorkerTable {
 	int currWorkers;
-	struct workerInfo workers[];
+	struct reWorkerInfo *workers;
 }reWorkerTable;
 
 typedef struct reWorkerInfo {
@@ -88,4 +90,17 @@ int channelIsCreate(char *channelName);
 int openChannel(char *channelName, int mode);
 
 
+reWorkerInfo * findBestThread(struct reWorkerTable *workerTable);
+struct reCombinerInfo * combinerInit();
+struct reWorkerTable * workerInit(int workerSize);
+int sendToWork(reWorkerInfo *worker, client *clientData);
 
+int processCommandRE(client *cilientData);
+ void  parseQuery(client * clientData);
+int sendToCombiner(reCombinerInfo *combiner);
+
+void *workerThread(void *value);
+void beforeSleepRE(struct aeEventLoop *eventLoop);
+
+
+void *combinerThread(void *value);
